@@ -29,6 +29,8 @@ test -v HIVE_METASTORE_PASSWORD
 
 sed -i \
   -e "s|%HIVE_METASTORE_JDBC_URL%|${HIVE_METASTORE_JDBC_URL}|g" \
+  -e "s|%HIVE_METASTORE_DB_HOST%|${HIVE_METASTORE_DB_HOST}|g" \
+  -e "s|%HIVE_METASTORE_DB_NAME%|${HIVE_METASTORE_DB_NAME}|g" \
   -e "s|%HIVE_METASTORE_DRIVER%|${HIVE_METASTORE_DRIVER}|g" \
   -e "s|%HIVE_METASTORE_USER%|${HIVE_METASTORE_USER}|g" \
   -e "s|%HIVE_METASTORE_PASSWORD%|${HIVE_METASTORE_PASSWORD}|g" \
@@ -39,14 +41,12 @@ sed -i \
   -e "s|%REGION%|${REGION:-}|g" \
   /etc/hive/conf/hive-site.xml
 
-export HIVE_METASTORE_DB_HOST="$(echo "$HIVE_METASTORE_JDBC_URL" | cut -d / -f 3 | cut -d : -f 1)"
-export HIVE_METASTORE_DB_NAME="$(echo "$HIVE_METASTORE_JDBC_URL" | cut -d / -f 4)"
 if [[ "$HIVE_METASTORE_DRIVER" == com.mysql.jdbc.Driver ]]; then
     sqlDir=/opt/sql/mysql
     function sql() {
         mysql --host="$HIVE_METASTORE_DB_HOST" --user="$HIVE_METASTORE_USER" --password="$HIVE_METASTORE_PASSWORD" "$HIVE_METASTORE_DB_NAME" "$@"
     }
-    # Make sure that postgres is accessible
+    # Make sure that mysql is accessible
     sql -e 'SELECT 1'
 
     if ! sql -e 'SELECT 1 FROM DBS LIMIT 1'; then
@@ -69,7 +69,7 @@ elif [[ "$HIVE_METASTORE_DRIVER" == org.postgresql.Driver ]]; then
         done
     fi
 else
-    echo "Unsupported driver: $$HIVE_METASTORE_DRIVER" >&2
+    echo "Unsupported driver: $HIVE_METASTORE_DRIVER" >&2
     exit 1
 fi
 
